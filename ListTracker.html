@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>💖 Pretty To-Do List</title>
+  <style>
+    :root {
+      --bg-color: #fff0f5;
+      --card-color: #ffe6f0;
+      --text-color: #333;
+      --accent-color: #ff66b2;
+      --input-bg: #fff7fb;
+      --completed-color: #aaa;
+      --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    body.dark {
+      --bg-color: #1e1e1e;
+      --card-color: #2b2b2b;
+      --text-color: #eee;
+      --accent-color: #ff99cc;
+      --input-bg: #3a3a3a;
+      --completed-color: #777;
+      --shadow: 0 4px 12px rgba(255, 255, 255, 0.05);
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      padding: 2rem;
+      max-width: 600px;
+      margin: auto;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    h1 {
+      text-align: center;
+      color: var(--accent-color);
+      margin-bottom: 1rem;
+    }
+
+    .theme-toggle {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    .input-group {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    input[type="text"],
+    input[type="time"] {
+      padding: 10px;
+      border: 2px solid var(--accent-color);
+      background: var(--input-bg);
+      border-radius: 8px;
+      color: var(--text-color);
+      box-shadow: var(--shadow);
+    }
+
+    button {
+      padding: 10px 14px;
+      background: var(--accent-color);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin-top: 10px;
+    }
+
+    li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--card-color);
+      border-radius: 10px;
+      padding: 12px 15px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow);
+      transition: 0.2s ease;
+    }
+
+    .task-info {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .checkbox {
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--accent-color);
+      border-radius: 50%;
+      cursor: pointer;
+      position: relative;
+      outline: none;
+    }
+
+    .checkbox:checked::after {
+      content: '✓';
+      position: absolute;
+      font-size: 14px;
+      top: -2px;
+      left: 3px;
+      color: var(--accent-color);
+    }
+
+    .completed-text {
+      text-decoration: line-through;
+      color: var(--completed-color);
+    }
+
+    .task-time {
+      font-size: 0.85em;
+      color: var(--accent-color);
+    }
+
+    .actions button {
+      background: none;
+      color: var(--accent-color);
+      border: 1px solid var(--accent-color);
+      border-radius: 6px;
+      font-size: 0.8em;
+      padding: 4px 8px;
+    }
+
+    .actions button:hover {
+      background-color: var(--accent-color);
+      color: white;
+    }
+
+    .empty-state {
+      text-align: center;
+      font-style: italic;
+      margin-top: 30px;
+      color: var(--completed-color);
+    }
+  </style>
+</head>
+<body>
+
+  <h1>💖 My Pretty To-Do List</h1>
+
+  <div class="theme-toggle">
+    <button onclick="toggleTheme()">🌙 Nighty night Mode</button>
+  </div>
+
+  <div class="input-group">
+    <input id="taskInput" type="text" placeholder="What do you need to do?">
+    <input id="timeInput" type="time">
+    <button onclick="addTask()">Add</button>
+  </div>
+
+  <ul id="taskList"></ul>
+  <div id="emptyState" class="empty-state" style="display:none;">Nothing to do yet ✨</div>
+
+  <script>
+    let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+    let isDark = JSON.parse(localStorage.getItem('darkMode')) || false;
+
+    if (isDark) document.body.classList.add('dark');
+
+    function saveTasks() {
+      localStorage.setItem('tasks', JSON.stringify(tasks));
+    }
+
+    function saveTheme() {
+      localStorage.setItem('darkMode', JSON.stringify(document.body.classList.contains('dark')));
+    }
+
+    function renderTasks() {
+      const taskList = document.getElementById('taskList');
+      const emptyState = document.getElementById('emptyState');
+      taskList.innerHTML = '';
+
+      if (tasks.length === 0) {
+        emptyState.style.display = 'block';
+        return;
+      } else {
+        emptyState.style.display = 'none';
+      }
+
+      tasks.forEach((task, index) => {
+        const li = document.createElement('li');
+
+        const taskInfo = document.createElement('div');
+        taskInfo.className = 'task-info';
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'checkbox';
+        checkbox.checked = task.done;
+        checkbox.onchange = () => toggleTask(index);
+
+        const taskText = document.createElement('span');
+        taskText.textContent = task.text;
+        taskText.className = task.done ? 'completed-text' : '';
+
+        const taskTime = document.createElement('span');
+        taskTime.textContent = task.time || '';
+        taskTime.className = 'task-time';
+
+        taskInfo.appendChild(checkbox);
+        taskInfo.appendChild(taskText);
+        taskInfo.appendChild(taskTime);
+
+        const removeBtn = document.createElement('button');
+        removeBtn.textContent = '✖';
+        removeBtn.onclick = () => removeTask(index);
+
+        const actions = document.createElement('div');
+        actions.className = 'actions';
+        actions.appendChild(removeBtn);
+
+        li.appendChild(taskInfo);
+        li.appendChild(actions);
+        taskList.appendChild(li);
+      });
+    }
+
+    function addTask() {
+      const taskInput = document.getElementById('taskInput');
+      const timeInput = document.getElementById('timeInput');
+      const text = taskInput.value.trim();
+      const time = timeInput.value;
+
+      if (!text) return;
+
+      tasks.push({ text, time, done: false });
+      taskInput.value = '';
+      timeInput.value = '';
+      saveTasks();
+      renderTasks();
+    }
+
+    function toggleTask(index) {
+      tasks[index].done = !tasks[index].done;
+      saveTasks();
+      renderTasks();
+    }
+
+    function removeTask(index) {
+      tasks.splice(index, 1);
+      saveTasks();
+      renderTasks();
+    }
+
+    function toggleTheme() {
+      document.body.classList.toggle('dark');
+      saveTheme();
+    }
+
+    renderTasks();
+  </script>
+
+</body>
+</html>
